@@ -12,6 +12,7 @@
 #include <iostream>
 #include "SimpleShader.h"
 #include "Material.h"
+#include "Lights.h"
 
 class Game 
 	: public DXCore
@@ -32,6 +33,9 @@ private:
 
 	// Should we use vsync to limit the frame rate?
 	bool vsync;
+
+	//Ambient color
+	XMFLOAT3 ambientColor;
 
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
@@ -75,5 +79,6 @@ private:
 	//Vectors
 	std::vector<std::shared_ptr<Entity>> eVector;
 	std::vector<std::shared_ptr<Material>> mVector;
+	std::vector<Light> lights;
 };
 

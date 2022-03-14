@@ -1,27 +1,22 @@
+#include "ShaderInclude.hlsli"
+#include "Lighting.hlsli"
+
+#define NUM_LIGHTS 5
 
 cbuffer ExternalData : register(b0)
 {
 	float4 colorTint;
 	float totalTime;
+	float roughness;
+	float3 cameraPos;
+	float3 ambient;
+
+	Light lights[NUM_LIGHTS];
 }
 
 
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-	float2 uv				: TEXCOORD;
-	float3 normal			: NORMAL;
-};
+
+
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -34,5 +29,37 @@ struct VertexToPixel
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	return float4(sin(totalTime), cos(input.uv), 1);
+	input.normal = normalize(input.normal);
+	//Fun custom shader
+	//return float4(sin(totalTime), cos(input.uv), 1);
+	//return float4(ambient, 1) * colorTint;
+	
+	//Start with Ambient
+	float3 totalLight = ambient * colorTint;
+
+	//Loop for all lights
+	for (int i = 0; i < NUM_LIGHTS; i++)
+	{
+		//Grab and normalize
+		Light light = lights[i];
+		light.Direction = normalize(light.Direction);
+
+		//Switch for light type
+		switch (lights[i].Type)
+		{
+		//Add DirLight to totalLight
+		case LIGHT_TYPE_DIRECTIONAL:
+			totalLight += DirLight(light, input.normal, input.worldPosition, cameraPos, roughness, colorTint);
+			break;
+		//Add PointLight to totalLight
+		case LIGHT_TYPE_POINT:
+			totalLight += PointLight(light, input.normal, input.worldPosition, cameraPos, roughness, colorTint);
+			break;
+		//Add spotLight to totalLight (not used yet)
+		case LIGHT_TYPE_SPOT:
+			break;
+		}
+	}
+
+	return float4(totalLight, 1);
 }

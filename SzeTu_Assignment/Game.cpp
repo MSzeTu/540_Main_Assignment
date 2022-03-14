@@ -32,7 +32,7 @@ Game::Game(HINSTANCE hInstance)
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
-
+	ambientColor = XMFLOAT3(0.1f, 0.1f, 0.25f);
 	camera = std::make_shared<Camera>(0.0f, 0.0f, -5.0f, (float)width / height, 5);
 }
 
@@ -61,7 +61,45 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateBasicGeometry();
+	Light dirLight1 = {};
+	dirLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight1.Direction = XMFLOAT3(1, 0, 0);
+	dirLight1.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	dirLight1.Intensity = 1.0f;
 	
+	Light dirLight2 = {};
+	dirLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight2.Direction = XMFLOAT3(0, 1, 0);
+	dirLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	dirLight2.Intensity = 1.0f;
+	
+	Light dirLight3 = {};
+	dirLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight3.Direction = XMFLOAT3(0, -1, 0);
+	dirLight3.Color = XMFLOAT3(1.0f, 0.0f, 1.0f);
+	dirLight3.Intensity = 1.0f;
+
+	Light pointLight1 = {};
+	pointLight1.Color = XMFLOAT3(1, 1, 1);
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Intensity = 1.0f;
+	pointLight1.Position = XMFLOAT3(-1.5f, 0, 0);
+	pointLight1.Range = 10.0f;
+	
+	Light pointLight2 = {};
+	pointLight2.Color = XMFLOAT3(1, 1, 1);
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Intensity = 0.5f;
+	pointLight2.Position = XMFLOAT3(1.5f, 0, 0);
+	pointLight2.Range = 10.0f;
+
+
+	lights.push_back(dirLight1);
+	lights.push_back(dirLight2);
+	lights.push_back(dirLight3);
+	lights.push_back(pointLight1);
+	lights.push_back(pointLight2);
+
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
@@ -98,6 +136,7 @@ void Game::CreateBasicGeometry()
 	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	XMFLOAT4 purple = XMFLOAT4(0.5f, 0.1f, 1.6f, 1.0f);
+	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
@@ -164,9 +203,10 @@ void Game::CreateBasicGeometry()
 
 
 	//Make Materials
-	std::shared_ptr<Material> matNew = std::make_shared<Material>(purple, vertexShader, customShader);
-	std::shared_ptr<Material> matBlue = std::make_shared<Material>(red, vertexShader, pixelShader);
-	std::shared_ptr<Material> matPurple = std::make_shared<Material>(purple, vertexShader, pixelShader);
+	std::shared_ptr<Material> matNew = std::make_shared<Material>(white, vertexShader, customShader, 0.5f);
+	std::shared_ptr<Material> matBlue = std::make_shared<Material>(red, vertexShader, pixelShader, 0.5f);
+	std::shared_ptr<Material> matPurple = std::make_shared<Material>(purple, vertexShader, pixelShader, 0.5f);
+	
 	mVector.push_back(matNew);
 	mVector.push_back(matBlue);
 	mVector.push_back(matPurple);
@@ -259,7 +299,16 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	//Draw the entities
 	for (int i = 0; i < eVector.size(); ++i)
+	{
+		eVector[i]->GetMat()->getPixelShader()->SetFloat3("ambient", ambientColor);
+		eVector[i]->GetMat()->getPixelShader()->SetData(
+			"lights",
+			&lights[0],
+			sizeof(Light) * (int)lights.size()
+		);
 		eVector[i]->Draw(context, camera, totalTime);
+	}
+		
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

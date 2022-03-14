@@ -1,45 +1,14 @@
-
+#include "ShaderInclude.hlsli"
 //Constant buffer
 cbuffer ExternalData : register(b0)
 {
 	matrix worldMatrix; //Must match BufferStruct
+	matrix worldInvTrans;
 	matrix view;
 	matrix projection;
 }
 
-// Struct representing a single vertex worth of data
-// - This should match the vertex definition in our C++ code
-// - By "match", I mean the size, order and number of members
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexShaderInput
-{ 
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float3 localPosition	: POSITION;     // XYZ position
-	float3 normal			: NORMAL;       // normal
-	float2 uv				: TEXCOORD;     //UV
-};
 
-// Struct representing the data we're sending down the pipeline
-// - Should match our pixel shader's input (hence the name: Vertex to Pixel)
-// - At a minimum, we need a piece of data defined tagged as SV_POSITION
-// - The name of the struct itself is unimportant, but should be descriptive
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float3 normal			: NORMAL;       // normal
-	float2 uv				: TEXCOORD;     //UV
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our vertex shader
@@ -68,7 +37,8 @@ VertexToPixel main( VertexShaderInput input )
 	// - The values will be interpolated per-pixel by the rasterizer
 	// - We don't need to alter it here, but we do need to send it to the pixel shader
 	output.uv = input.uv;
-	output.normal = input.normal;
+	output.normal = mul((float3x3)worldInvTrans, input.normal);
+	output.worldPosition = mul(worldMatrix, float4(input.localPosition, 1)).xyz;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

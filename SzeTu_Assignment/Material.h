@@ -11,7 +11,7 @@ class Material
 {
 public: 
 	//Constructor
-	Material(XMFLOAT4 cTint, shared_ptr<SimpleVertexShader> vShade, shared_ptr<SimplePixelShader> pShade);
+	Material(XMFLOAT4 cTint, shared_ptr<SimpleVertexShader> vShade, shared_ptr<SimplePixelShader> pShade, float rough);
 
 	//get Methods
 	XMFLOAT4 GetColorTint();
@@ -23,11 +23,15 @@ public:
 	void setVertexShader(shared_ptr<SimpleVertexShader> vShade);
 	void setPixelShader(shared_ptr<SimplePixelShader> pShade);
 
+	float getRoughness();
+
+	void setRoughness(float rough);
 private:
 	//Fields
 	XMFLOAT4 colorTint;
 	shared_ptr<SimpleVertexShader> vertexShader;
 	shared_ptr<SimplePixelShader> pixelShader;
 
+	float roughness;
 };
 

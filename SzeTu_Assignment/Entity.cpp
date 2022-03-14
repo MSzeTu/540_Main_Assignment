@@ -37,7 +37,10 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, std::shar
 
 	ps->SetFloat4("colorTint", matPtr->GetColorTint());
 	ps->SetFloat("totalTime", tTime);
+	ps->SetFloat("roughness", matPtr->getRoughness());
+	ps->SetFloat3("cameraPos", camera->GetTransform()->GetPosition());
 	vs->SetMatrix4x4("worldMatrix", transform.GetWorldMatrix());
+	vs->SetMatrix4x4("worldInvTrans", transform.GetWorldInverseTransposeMatrix());
 	vs->SetMatrix4x4("view", camera->GetViewMatrix());
 	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
 
