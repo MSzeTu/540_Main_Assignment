@@ -11,11 +11,18 @@ cbuffer ExternalData : register(b0)
 	float3 cameraPos;
 	float3 ambient;
 
+	float2 uvScale;
+	float2 uvOffset;
+
 	Light lights[NUM_LIGHTS];
 }
 
 
+//Texture resources
+Texture2D SurfaceTexture		: register(t0); //Textures use "t" registers
+Texture2D SpecularMap			: register(t1); 
 
+SamplerState BasicSampler		: register(s0); //Samplers use "s" registers
 
 
 // --------------------------------------------------------
@@ -34,8 +41,18 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//return float4(sin(totalTime), cos(input.uv), 1);
 	//return float4(ambient, 1) * colorTint;
 	
+	//Adjust uv coords
+	input.uv = input.uv * uvScale + uvOffset;
+
+	//Sample texture and tint
+	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+	surfaceColor *= colorTint;
+
+	//Specular stuff
+	float specularScale = SpecularMap.Sample(BasicSampler, input.uv).r; //Just the red channel
+
 	//Start with Ambient
-	float3 totalLight = ambient * colorTint;
+	float3 totalLight = ambient * surfaceColor;
 
 	//Loop for all lights
 	for (int i = 0; i < NUM_LIGHTS; i++)
@@ -49,11 +66,11 @@ float4 main(VertexToPixel input) : SV_TARGET
 		{
 		//Add DirLight to totalLight
 		case LIGHT_TYPE_DIRECTIONAL:
-			totalLight += DirLight(light, input.normal, input.worldPosition, cameraPos, roughness, colorTint);
+			totalLight += DirLight(light, input.normal, input.worldPosition, cameraPos, roughness, surfaceColor, specularScale);
 			break;
 		//Add PointLight to totalLight
 		case LIGHT_TYPE_POINT:
-			totalLight += PointLight(light, input.normal, input.worldPosition, cameraPos, roughness, colorTint);
+			totalLight += PointLight(light, input.normal, input.worldPosition, cameraPos, roughness, surfaceColor, specularScale);
 			break;
 		//Add spotLight to totalLight (not used yet)
 		case LIGHT_TYPE_SPOT:

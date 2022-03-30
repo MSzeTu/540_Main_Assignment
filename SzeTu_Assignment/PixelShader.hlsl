@@ -4,6 +4,12 @@ cbuffer ExternalData : register(b0)
 	float4 colorTint;
 }
 
+//Texture resources
+Texture2D SurfaceTexture		: register(t0); //Textures use "t" registers
+Texture2D SpecularMap			: register(t1);
+
+SamplerState BasicSampler		: register(s0); //Samplers use "s" registers
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 

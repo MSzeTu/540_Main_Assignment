@@ -65,14 +65,14 @@ float SpecularPhong(float3 normal, float3 dirToLight, float3 toCamera, float rou
 //Light types
 
 //Directional lights
-float3 DirLight(Light light, float3 normal, float3 worldPos, float3 cameraPos, float roughness, float3 surfaceColor)
+float3 DirLight(Light light, float3 normal, float3 worldPos, float3 cameraPos, float roughness, float3 surfaceColor, float specScale)
 {
 	float3 toLight = normalize(-light.Direction);
 	float3 toCam = normalize(cameraPos - worldPos);
 
 	//Calculate amounts
 	float diff = Diffuse(normal, toLight);
-	float spec = SpecularPhong(normal, toLight, toCam, roughness);
+	float spec = SpecularPhong(normal, toLight, toCam, roughness) * specScale;
 
 	//Combine them
 	return (diff * surfaceColor + spec) * light.Intensity * light.Color;
@@ -80,7 +80,7 @@ float3 DirLight(Light light, float3 normal, float3 worldPos, float3 cameraPos, f
 
 
 //Point Lights
-float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor)
+float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor, float specScale)
 {
 	//Calc light direction
 	float3 toLight = normalize(light.Position - worldPos);
@@ -89,7 +89,7 @@ float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, fl
 	//Calc light amounts
 	float atten = Attenuate(light, worldPos);
 	float diff = Diffuse(normal, toLight);
-	float spec = SpecularPhong(normal, toLight, toCam, roughness);
+	float spec = SpecularPhong(normal, toLight, toCam, roughness) * specScale;
 
 	//Combine
 	return (diff * surfaceColor + spec) * atten * light.Intensity * light.Color;

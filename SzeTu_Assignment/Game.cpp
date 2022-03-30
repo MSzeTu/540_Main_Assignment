@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Vertex.h"
 #include "Input.h"
+#include "WICTextureLoader.h"
 
 // Needed for a helper function to read compiled shader files from the hard drive
 #pragma comment(lib, "d3dcompiler.lib")
@@ -64,19 +65,22 @@ void Game::Init()
 	Light dirLight1 = {};
 	dirLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight1.Direction = XMFLOAT3(1, 0, 0);
-	dirLight1.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	//dirLight1.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	dirLight1.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	dirLight1.Intensity = 1.0f;
 	
 	Light dirLight2 = {};
 	dirLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight2.Direction = XMFLOAT3(0, 1, 0);
-	dirLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	//dirLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	dirLight2.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	dirLight2.Intensity = 1.0f;
 	
 	Light dirLight3 = {};
 	dirLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight3.Direction = XMFLOAT3(0, -1, 0);
-	dirLight3.Color = XMFLOAT3(1.0f, 0.0f, 1.0f);
+	//dirLight3.Color = XMFLOAT3(1.0f, 0.0f, 1.0f);
+	dirLight3.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	dirLight3.Intensity = 1.0f;
 
 	Light pointLight1 = {};
@@ -201,12 +205,35 @@ void Game::CreateBasicGeometry()
 	twoSidedQuad = std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/quad_double_sided.obj").c_str(), device);
 	cube = std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cube.obj").c_str(), device);
 
+	//Create sampler state here
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; //Between 0-1 uv
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC; //Handle sampling between pixels
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
+
+	//Load textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockShaderView; 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> specShaderView; 
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/rock.jpg").c_str(), nullptr, rockShaderView.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/SpecularMap.png").c_str(), nullptr, specShaderView.GetAddressOf());
+
+
 
 	//Make Materials
-	std::shared_ptr<Material> matNew = std::make_shared<Material>(white, vertexShader, customShader, 0.5f);
-	std::shared_ptr<Material> matBlue = std::make_shared<Material>(red, vertexShader, pixelShader, 0.5f);
-	std::shared_ptr<Material> matPurple = std::make_shared<Material>(purple, vertexShader, pixelShader, 0.5f);
-	
+	std::shared_ptr<Material> matNew = std::make_shared<Material>(white, vertexShader, customShader, 0.0f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
+	std::shared_ptr<Material> matBlue = std::make_shared<Material>(red, vertexShader, pixelShader, 0.5f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
+	std::shared_ptr<Material> matPurple = std::make_shared<Material>(purple, vertexShader, pixelShader, 0.5f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
+
+	matNew->AddTextureSRV("SurfaceTexture", rockShaderView);
+	matNew->AddTextureSRV("SpecularMap", specShaderView);
+	matNew->AddSampler("BasicSampler", sampler);
+
 	mVector.push_back(matNew);
 	mVector.push_back(matBlue);
 	mVector.push_back(matPurple);
@@ -224,7 +251,7 @@ void Game::CreateBasicGeometry()
 	fourthEntity = std::make_shared<Entity>(cube, matNew);
 	eVector.push_back(fourthEntity);
 
-	fifthEntity = std::make_shared<Entity>(cube, matPurple);
+	fifthEntity = std::make_shared<Entity>(cube, matNew);
 	eVector.push_back(fifthEntity);
 }
 
