@@ -73,8 +73,8 @@ float3 DirLight(Light light, float3 normal, float3 worldPos, float3 cameraPos, f
 	//Calculate amounts
 	float diff = Diffuse(normal, toLight);
 	float spec = SpecularPhong(normal, toLight, toCam, roughness) * specScale;
-
 	//Combine them
+	spec *= any(diff);
 	return (diff * surfaceColor + spec) * light.Intensity * light.Color;
 }
 
@@ -90,9 +90,33 @@ float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, fl
 	float atten = Attenuate(light, worldPos);
 	float diff = Diffuse(normal, toLight);
 	float spec = SpecularPhong(normal, toLight, toCam, roughness) * specScale;
-
+	spec *= any(diff);
 	//Combine
 	return (diff * surfaceColor + spec) * atten * light.Intensity * light.Color;
+}
+
+// sample and unpack
+float3 SampleAndUnpackNormalMap(Texture2D map, SamplerState samp, float2 uv)
+{
+	return map.Sample(samp, uv).rgb * 2.0f - 1.0f;
+}
+
+//Convert tangent-space normal map to world space normal
+float3 NormalMapping(Texture2D map, SamplerState samp, float2 uv, float3 normal, float3 tangent)
+{
+	//grab normal
+	float3 normalFromMap = SampleAndUnpackNormalMap(map, samp, uv);
+
+	//get required vectors
+	float3 N = normal;
+	float3 T = normalize(tangent - N * dot(tangent, N));
+	float3 B = cross(T, N);
+
+	//Make 3x3 Matrix for conversion
+	float3x3 TBN = float3x3(T, B, N);
+
+	//Return
+	return normalize(mul(normalFromMap, TBN));
 }
 
 #endif

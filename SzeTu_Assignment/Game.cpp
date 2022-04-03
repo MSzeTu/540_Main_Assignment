@@ -220,18 +220,41 @@ void Game::CreateBasicGeometry()
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockShaderView; 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> specShaderView; 
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionShaderView;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalView;
+
 	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/rock.jpg").c_str(), nullptr, rockShaderView.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/SpecularMap.png").c_str(), nullptr, specShaderView.GetAddressOf());
 
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/cushion.png").c_str(), nullptr, cushionShaderView.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/cushion_normals.png").c_str(), nullptr, cushionNormalView.GetAddressOf());
 
+	//Sky stuff
+	std::shared_ptr<SimpleVertexShader> skyVS = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"SkyVShader.cso").c_str());
+	std::shared_ptr<SimplePixelShader> skyPS = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"SkyPShader.cso").c_str());
+
+	sky = std::make_shared<Sky>(
+		GetFullPathTo_Wide(L"../../Assets/Skies/CloudsBlue/right.png").c_str(),
+		GetFullPathTo_Wide(L"../../Assets/Skies/CloudsBlue/left.png").c_str(),
+		GetFullPathTo_Wide(L"../../Assets/Skies/CloudsBlue/up.png").c_str(),
+		GetFullPathTo_Wide(L"../../Assets/Skies/CloudsBlue/down.png").c_str(),
+		GetFullPathTo_Wide(L"../../Assets/Skies/CloudsBlue/front.png").c_str(),
+		GetFullPathTo_Wide(L"../../Assets/Skies/CloudsBlue/back.png").c_str(),
+		cube,
+		skyVS, 
+		skyPS,
+		sampler,
+		device,
+		context);
 
 	//Make Materials
 	std::shared_ptr<Material> matNew = std::make_shared<Material>(white, vertexShader, customShader, 0.0f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
 	std::shared_ptr<Material> matBlue = std::make_shared<Material>(red, vertexShader, pixelShader, 0.5f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
 	std::shared_ptr<Material> matPurple = std::make_shared<Material>(purple, vertexShader, pixelShader, 0.5f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
 
-	matNew->AddTextureSRV("SurfaceTexture", rockShaderView);
+	matNew->AddTextureSRV("SurfaceTexture", cushionShaderView);
 	matNew->AddTextureSRV("SpecularMap", specShaderView);
+	matNew->AddTextureSRV("NormalMap", cushionNormalView);
 	matNew->AddSampler("BasicSampler", sampler);
 
 	mVector.push_back(matNew);
@@ -335,7 +358,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		);
 		eVector[i]->Draw(context, camera, totalTime);
 	}
-		
+	sky->Draw(camera);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

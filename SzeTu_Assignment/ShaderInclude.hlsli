@@ -22,6 +22,19 @@ struct VertexToPixel
 	float2 uv				: TEXCOORD;
 	float3 normal			: NORMAL;
 	float3 worldPosition    : POSITION;
+	float3 tangent          : TANGENT;
+};
+
+//Struct for our Skybox Vertex Shader
+struct VertexToPixelSky
+{
+	// Data type
+	//  |
+	//  |   Name          Semantic
+	//  |    |                |
+	//  v    v                v
+	float4 screenPosition	: SV_POSITION;
+	float3 sampleDir		: DIRECTION;
 };
 
 // Defines a single light that can be sent to the GPU
@@ -44,6 +57,7 @@ struct VertexShaderInput
 	float3 localPosition	: POSITION;     // XYZ position
 	float3 normal			: NORMAL;       // normal
 	float2 uv				: TEXCOORD;     //UV
+	float3 tangent          : TANGENT;
 };
 
 #endif

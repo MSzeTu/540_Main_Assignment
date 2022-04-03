@@ -44,6 +44,7 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, std::shar
 	ps->SetFloat3("cameraPos", camera->GetTransform()->GetPosition());
 	ps->SetFloat2("uvScale", matPtr->GetUVScale());
 	ps->SetFloat2("uvOffset", matPtr->GetUVOffset());
+	ps->SetInt("useSpecularMap", 0); //Hard coded for now, bad practice though.
 
 	//Send data to vertex shader
 	vs->SetMatrix4x4("worldMatrix", transform.GetWorldMatrix());

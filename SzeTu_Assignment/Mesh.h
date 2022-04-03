@@ -23,6 +23,8 @@ public:
 	
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> dContext);
 
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
+
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;

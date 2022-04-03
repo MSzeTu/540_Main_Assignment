@@ -13,6 +13,7 @@
 #include "SimpleShader.h"
 #include "Material.h"
 #include "Lights.h"
+#include "Sky.h"
 
 class Game 
 	: public DXCore
@@ -80,5 +81,8 @@ private:
 	std::vector<std::shared_ptr<Entity>> eVector;
 	std::vector<std::shared_ptr<Material>> mVector;
 	std::vector<Light> lights;
+
+	//Sky
+	std::shared_ptr<Sky> sky;
 };
 

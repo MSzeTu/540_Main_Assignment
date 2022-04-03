@@ -13,6 +13,7 @@ cbuffer ExternalData : register(b0)
 
 	float2 uvScale;
 	float2 uvOffset;
+	int useSpecularMap;
 
 	Light lights[NUM_LIGHTS];
 }
@@ -21,7 +22,7 @@ cbuffer ExternalData : register(b0)
 //Texture resources
 Texture2D SurfaceTexture		: register(t0); //Textures use "t" registers
 Texture2D SpecularMap			: register(t1); 
-
+Texture2D NormalMap				: register(t2);
 SamplerState BasicSampler		: register(s0); //Samplers use "s" registers
 
 
@@ -36,7 +37,9 @@ SamplerState BasicSampler		: register(s0); //Samplers use "s" registers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	//Normalize normals and tangents
 	input.normal = normalize(input.normal);
+	input.tangent = normalize(input.tangent);
 	//Fun custom shader
 	//return float4(sin(totalTime), cos(input.uv), 1);
 	//return float4(ambient, 1) * colorTint;
@@ -44,13 +47,20 @@ float4 main(VertexToPixel input) : SV_TARGET
 	//Adjust uv coords
 	input.uv = input.uv * uvScale + uvOffset;
 
+	//Apply normal mapping
+	input.normal = NormalMapping(NormalMap, BasicSampler, input.uv, input.normal, input.tangent);
+	
 	//Sample texture and tint
 	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
 	surfaceColor *= colorTint;
 
 	//Specular stuff
-	float specularScale = SpecularMap.Sample(BasicSampler, input.uv).r; //Just the red channel
-
+	float specularScale = 1.0f;
+	if (useSpecularMap)
+	{
+		// Are we actually using the spec map?
+		specularScale = SpecularMap.Sample(BasicSampler, input.uv).r; // Just the red channel!
+	}
 	//Start with Ambient
 	float3 totalLight = ambient * surfaceColor;
 
@@ -77,6 +87,6 @@ float4 main(VertexToPixel input) : SV_TARGET
 			break;
 		}
 	}
-
+	
 	return float4(totalLight, 1);
 }
