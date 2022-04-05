@@ -105,18 +105,19 @@ float3 SampleAndUnpackNormalMap(Texture2D map, SamplerState samp, float2 uv)
 float3 NormalMapping(Texture2D map, SamplerState samp, float2 uv, float3 normal, float3 tangent)
 {
 	//grab normal
-	float3 normalFromMap = SampleAndUnpackNormalMap(map, samp, uv);
+	float3 unpackedNormal = map.Sample(samp, uv).rgb * 2 - 1;
 
 	//get required vectors
-	float3 N = normal;
-	float3 T = normalize(tangent - N * dot(tangent, N));
+	float3 N = normalize(normal);
+	float3 T = normalize(tangent);
+	T = normalize(T - N * dot(T, N)); //Gram-Schmidt is causing issues
 	float3 B = cross(T, N);
-
+	
 	//Make 3x3 Matrix for conversion
 	float3x3 TBN = float3x3(T, B, N);
 
 	//Return
-	return normalize(mul(normalFromMap, TBN));
+	return normalize(mul(unpackedNormal, TBN));
 }
 
 #endif
