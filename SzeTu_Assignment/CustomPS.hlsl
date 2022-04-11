@@ -52,7 +52,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	input.normal = NormalMapping(NormalMap, BasicSampler, input.uv, input.normal, input.tangent);
 	
 	//Sample texture and tint
-	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+	float3 surfaceColor = pow(SurfaceTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
 	surfaceColor *= colorTint;
 
 	//Specular stuff
@@ -73,7 +73,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 		light.Direction = normalize(light.Direction);
 
 		//Switch for light type
-		switch (lights[i].Type)
+		switch (lights[i].Type) 
 		{
 		//Add DirLight to totalLight
 		case LIGHT_TYPE_DIRECTIONAL:
@@ -89,5 +89,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 		}
 	}
 	
-	return float4(totalLight, 1);
+	return float4(pow(totalLight, 1.0f/2.2f), 1);
 }

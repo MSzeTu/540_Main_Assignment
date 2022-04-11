@@ -123,7 +123,9 @@ void Game::LoadShaders()
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShader.cso").c_str());
-
+	
+	pixelShaderPBR = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"PixelShaderPBR.cso").c_str());
+ 
 	customShader = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"CustomPS.cso").c_str());
 }
 
@@ -229,6 +231,17 @@ void Game::CreateBasicGeometry()
 	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/cushion.png").c_str(), nullptr, cushionShaderView.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/cushion_normals.png").c_str(), nullptr, cushionNormalView.GetAddressOf());
 
+	//PBR Textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedAlbedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedMetal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedRoughness;
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/scratched_albedo.png").c_str(), nullptr, scratchedAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/scratched_metal.png").c_str(), nullptr, scratchedMetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/scratched_normals.png").c_str(), nullptr, scratchedNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), GetFullPathTo_Wide(L"../../Assets/Textures/scratched_roughness.png").c_str(), nullptr, scratchedRoughness.GetAddressOf());
+
 	//Sky stuff
 	std::shared_ptr<SimpleVertexShader> skyVS = std::make_shared<SimpleVertexShader>(device, context, GetFullPathTo_Wide(L"SkyVShader.cso").c_str());
 	std::shared_ptr<SimplePixelShader> skyPS = std::make_shared<SimplePixelShader>(device, context, GetFullPathTo_Wide(L"SkyPShader.cso").c_str());
@@ -249,6 +262,7 @@ void Game::CreateBasicGeometry()
 
 	//Make Materials
 	std::shared_ptr<Material> matNew = std::make_shared<Material>(white, vertexShader, customShader, 0.0f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
+	std::shared_ptr<Material> matPBR = std::make_shared<Material>(white, vertexShader, pixelShaderPBR, 0.0f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
 	std::shared_ptr<Material> matBlue = std::make_shared<Material>(red, vertexShader, pixelShader, 0.5f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
 	std::shared_ptr<Material> matPurple = std::make_shared<Material>(purple, vertexShader, pixelShader, 0.5f, XMFLOAT2(5, 5), XMFLOAT2(5, 5));
 
@@ -257,24 +271,32 @@ void Game::CreateBasicGeometry()
 	matNew->AddTextureSRV("NormalMap", cushionNormalView);
 	matNew->AddSampler("BasicSampler", sampler);
 
+	matPBR->AddSampler("BasicSampler", sampler);
+	matPBR->AddTextureSRV("Albedo", scratchedAlbedo);
+	matPBR->AddTextureSRV("NormalMap", scratchedNormal);
+	matPBR->AddTextureSRV("RoughnessMap", scratchedRoughness);
+	matPBR->AddTextureSRV("MetalnessMap", scratchedMetal);
+	
+	//mVector.push_back(matPBR);
+	mVector.push_back(matPBR);
 	mVector.push_back(matNew);
 	mVector.push_back(matBlue);
 	mVector.push_back(matPurple);
 
 	//Make Entitites
-	firstEntity = std::make_shared<Entity>(sphere, matNew);
+	firstEntity = std::make_shared<Entity>(sphere, matPBR);
 	eVector.push_back(firstEntity);
 	
-	secondEntity = std::make_shared<Entity>(cylinder, matNew);
+	secondEntity = std::make_shared<Entity>(cylinder, matPBR);
 	eVector.push_back(secondEntity);
 
-	thirdEntity = std::make_shared<Entity>(twoSidedQuad, matNew);
+	thirdEntity = std::make_shared<Entity>(twoSidedQuad, matPBR);
 	eVector.push_back(thirdEntity);
 
-	fourthEntity = std::make_shared<Entity>(cube, matNew);
+	fourthEntity = std::make_shared<Entity>(cube, matPBR);
 	eVector.push_back(fourthEntity);
 
-	fifthEntity = std::make_shared<Entity>(cube, matNew);
+	fifthEntity = std::make_shared<Entity>(cube, matPBR);
 	eVector.push_back(fifthEntity);
 }
 
@@ -340,12 +362,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 		1.0f,
 		0);
-
-
-	/* removing these for now, so we can focus on the entities 
-	triangle->Draw();
-	square->Draw();
-	hexagon->Draw(); */
 
 	//Draw the entities
 	for (int i = 0; i < eVector.size(); ++i)
